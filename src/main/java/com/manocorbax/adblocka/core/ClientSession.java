@@ -1,5 +1,9 @@
 package com.manocorbax.adblocka.core;
 
+import com.manocorbax.adblocka.core.handler.ConnectHandler;
+import com.manocorbax.adblocka.core.handler.Handler;
+import com.manocorbax.adblocka.core.handler.HttpHandler;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -35,20 +39,24 @@ public class ClientSession implements Runnable {
             );
 
             // Reads the request header
-            String requestHeader = in.readLine();
-            LOG.info("REQUEST: " + requestHeader + "\n");
+            String line = in.readLine();
+            LOG.info("REQUEST: " + line + "\n");
 
-            //Iterates until the communication is done
-            String line;
+            //Iterates until the full message is read
+            StringBuilder message = new StringBuilder(line);
             while (!(line = in.readLine()).isEmpty()) {
-                LOG.info("Message received: \n\t" + line);
+                message.append(line).append("\n");
             }
 
-            LOG.info("Communication ended\n");
-            client.close();
+            LOG.info("Message received: \n" + message);
+            handleMessage(message.toString());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
+    }
+
+    private void handleMessage(String message) throws IOException {
+        Handler.getHandlerFor(message, client).handle();
     }
 }

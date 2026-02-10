@@ -1,3 +1,7 @@
 com/manocorbax/adblocka/core/ProxyServer.class
 com/manocorbax/adblocka/core/ClientSession.class
+com/manocorbax/adblocka/core/handler/Handler.class
+com/manocorbax/adblocka/core/handler/HttpHandler.class
+com/manocorbax/adblocka/core/tunnel/TcpTunnel.class
+com/manocorbax/adblocka/core/handler/ConnectHandler.class
 com/manocorbax/adblocka/App.class
