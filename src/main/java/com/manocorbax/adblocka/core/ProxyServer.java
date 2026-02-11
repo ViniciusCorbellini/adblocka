@@ -1,9 +1,16 @@
 package com.manocorbax.adblocka.core;
 
-import java.io.IOException;
+import com.manocorbax.adblocka.core.handler.ConnectHandler;
+import com.manocorbax.adblocka.core.handler.HandlerResolver;
+import com.manocorbax.adblocka.core.handler.HttpHandler;
+import com.manocorbax.adblocka.core.handler.RequestHandler;
+import com.manocorbax.adblocka.core.request.RequestParser;
+import com.manocorbax.adblocka.core.session.ClientSession;
+
 import java.net.ServerSocket;
 
 import java.net.Socket;
+import java.util.List;
 import java.util.logging.Logger;
 
 public class ProxyServer {
@@ -22,12 +29,26 @@ public class ProxyServer {
                 ss.getLocalPort())
         );
 
+        // ===== COMPOSITION ROOT =====
+
+        RequestParser parser = new RequestParser();
+
+        List<RequestHandler> handlers = List.of(
+                new ConnectHandler(),
+                new HttpHandler()
+        );
+
+        HandlerResolver resolver =
+                new HandlerResolver(handlers);
+
+        // ============================
+
         while (true) {
             LOG.info("Waiting for clients\n");
             Socket client = ss.accept();
 
-            LOG.info("Client Accepted, instantiating new Client Session\n");
-            new Thread(new ClientSession(client)).start();
+            LOG.info("Client Accepted\n");
+            new Thread(new ClientSession(client, parser, resolver)).start();
         }
     }
 }

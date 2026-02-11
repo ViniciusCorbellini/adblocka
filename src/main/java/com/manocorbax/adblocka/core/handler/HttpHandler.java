@@ -1,19 +1,16 @@
 package com.manocorbax.adblocka.core.handler;
 
-import java.net.Socket;
+import com.manocorbax.adblocka.core.request.RequestContext;
 
-public class HttpHandler implements Handler{
+public class HttpHandler implements RequestHandler{
 
-    String message;
-    Socket client;
-
-    public HttpHandler(String message, Socket client) {
-        this.message = message;
-        this.client = client;
+    @Override
+    public boolean supports(RequestContext context) {
+        return !"CONNECT".equalsIgnoreCase(context.getMethod());
     }
 
     @Override
-    public void handle() {
-
+    public void handle(RequestContext context) throws Exception {
+        throw new UnsupportedOperationException("its in the TODO list bro, just read it!");
     }
 }

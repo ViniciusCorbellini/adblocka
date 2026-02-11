@@ -1,55 +1,33 @@
 package com.manocorbax.adblocka.core.handler;
 
-import com.manocorbax.adblocka.core.tunnel.TcpTunnel;
+import com.manocorbax.adblocka.core.request.RequestContext;
+import com.manocorbax.adblocka.core.tunnel.Tunnel;
 
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.OutputStream;
 import java.net.Socket;
 
-public class ConnectHandler implements Handler{
 
-    private String message;
-    private Socket client;
-    private Socket remote;
+public class ConnectHandler implements RequestHandler{
 
-    public ConnectHandler(String message) {
-        this.message = message;
-    }
-
-    public ConnectHandler(String message, Socket client) {
-        this.message = message;
-        this.client = client;
+    @Override
+    public boolean supports(RequestContext context) {
+        return "CONNECT".equalsIgnoreCase(context.getMethod());
     }
 
     @Override
-    public void handle() throws IOException {
-        this.remote = decomposeConnect(this.message);
+    public void handle(RequestContext context) throws Exception {
+        Socket client = context.getClientSocket();
+        Socket remote = new Socket(context.getHost(), context.getPort());
 
-        sendOkResponse();
-
-        new Thread(new TcpTunnel(client.getInputStream(), remote.getOutputStream())).start();
-        new Thread(new TcpTunnel(remote.getInputStream(), client.getOutputStream())).start();
+        // 200 OK answer
+        sendOkAnswer(client);
+        Tunnel tunnel = new Tunnel(client, remote);
+        tunnel.start();
     }
 
-    private void sendOkResponse() throws IOException {
-        PrintWriter out = new PrintWriter(client.getOutputStream(), true);
-        out.print("HTTP/1.1 200 Connection Established\r\n\r\n");
-        out.flush();
-    }
-
-    private Socket decomposeConnect(String message) throws IOException {
-        //Connect example:
-        // CONNECT www.google.com:443 HTTP/1.1
-        // Proxy-Connection: keep-alive
-        // Connection: keep-alive
-        // Host: www.google.com:443
-        String[] parts = message.split(" ");
-        String target = parts[1]; // www.google.com:443
-
-        String[] hostPort = target.split(":");
-        String host = hostPort[0];
-        int port = Integer.parseInt(hostPort[1]);
-
-        return new Socket(host, port);
+    private void sendOkAnswer(Socket client) throws Exception{
+        OutputStream clientOut = client.getOutputStream();
+        clientOut.write("HTTP/1.1 200 Connection Established\r\n\r\n".getBytes());
+        clientOut.flush();
     }
 }
