@@ -2,6 +2,9 @@ package com.manocorbax.adblocka.core.session;
 
 import com.manocorbax.adblocka.core.handler.HandlerResolver;
 import com.manocorbax.adblocka.core.handler.RequestHandler;
+import com.manocorbax.adblocka.core.filter.dns.BlockedRequestResponder;
+import com.manocorbax.adblocka.core.filter.dns.DnsFilterDecision;
+import com.manocorbax.adblocka.core.filter.dns.DnsFilteringEngine;
 import com.manocorbax.adblocka.core.request.RequestContext;
 import com.manocorbax.adblocka.core.request.RequestParser;
 
@@ -16,11 +19,19 @@ public class ClientSession implements Runnable {
     private final Socket client;
     private final RequestParser parser;
     private final HandlerResolver resolver;
+    private final DnsFilteringEngine dnsFilteringEngine;
+    private final BlockedRequestResponder blockedRequestResponder;
 
-    public ClientSession(Socket client, RequestParser parser, HandlerResolver resolver) {
+    public ClientSession(Socket client,
+                         RequestParser parser,
+                         HandlerResolver resolver,
+                         DnsFilteringEngine dnsFilteringEngine,
+                         BlockedRequestResponder blockedRequestResponder) {
         this.client = client;
         this.parser = parser;
         this.resolver = resolver;
+        this.dnsFilteringEngine = dnsFilteringEngine;
+        this.blockedRequestResponder = blockedRequestResponder;
     }
 
     private static final Logger LOG = Logger.getLogger(ClientSession.class.getName());
@@ -35,6 +46,14 @@ public class ClientSession implements Runnable {
             LOG.info("REQUEST: " + rawRequest + "\n");
 
             RequestContext context = parser.parse(rawRequest, client);
+
+            DnsFilterDecision decision = dnsFilteringEngine.evaluate(context);
+            if (decision.blocked()) {
+                LOG.info("Blocked request to host " + context.getHost() + " reason=" + decision.reason());
+                blockedRequestResponder.respond(context, decision);
+                return;
+            }
+
             RequestHandler handler = resolver.resolve(context);
 
             handler.handle(context);

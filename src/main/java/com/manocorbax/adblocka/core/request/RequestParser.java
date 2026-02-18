@@ -20,16 +20,27 @@ public class RequestParser {
         }
 
         // HTTP
-        String host = extractHost(lines);
-        return new RequestContext(rawRequest, client, method, host, 80);
+        HostAndPort hostAndPort = extractHostAndPort(lines);
+        return new RequestContext(rawRequest, client, method, hostAndPort.host(), hostAndPort.port());
     }
 
-    private String extractHost(String[] lines) {
+    private HostAndPort extractHostAndPort(String[] lines) {
         for (String line : lines) {
             if (line.toLowerCase().startsWith("host:")) {
-                return line.substring(5).trim();
+                String hostHeader = line.substring(5).trim();
+
+                if (hostHeader.contains(":")) {
+                    String[] hostParts = hostHeader.split(":");
+                    return new HostAndPort(hostParts[0], Integer.parseInt(hostParts[1]));
+                }
+
+                return new HostAndPort(hostHeader, 80);
             }
         }
+
         throw new IllegalStateException("Host header not found");
+    }
+
+    private record HostAndPort(String host, int port) {
     }
 }

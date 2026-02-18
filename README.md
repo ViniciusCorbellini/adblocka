@@ -37,10 +37,12 @@ adblocka/
 * Basic request parsing
 * HTTPS tunneling via CONNECT
 * Multithreaded client handling
+* DNS-level request blocking with pluggable blocklists
 
 ### Planned
 
 * Rule-based request filtering (domains, paths, headers)
+* External blocklist providers
 * Configurable blocklists
 * CLI flags for behavior control
 * Logging and metrics

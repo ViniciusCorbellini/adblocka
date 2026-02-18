@@ -4,6 +4,11 @@ import com.manocorbax.adblocka.core.handler.ConnectHandler;
 import com.manocorbax.adblocka.core.handler.HandlerResolver;
 import com.manocorbax.adblocka.core.handler.HttpHandler;
 import com.manocorbax.adblocka.core.handler.RequestHandler;
+import com.manocorbax.adblocka.core.filter.dns.BlockedRequestResponder;
+import com.manocorbax.adblocka.core.filter.dns.DefaultDomainBlocklist;
+import com.manocorbax.adblocka.core.filter.dns.DnsFilteringEngine;
+import com.manocorbax.adblocka.core.filter.dns.DomainBlocklist;
+import com.manocorbax.adblocka.core.filter.dns.JvmHostResolutionService;
 import com.manocorbax.adblocka.core.request.RequestParser;
 import com.manocorbax.adblocka.core.session.ClientSession;
 
@@ -41,6 +46,13 @@ public class ProxyServer {
         HandlerResolver resolver =
                 new HandlerResolver(handlers);
 
+        List<DomainBlocklist> blocklists = List.of(new DefaultDomainBlocklist());
+        DnsFilteringEngine dnsFilteringEngine = new DnsFilteringEngine(
+                new JvmHostResolutionService(),
+                blocklists
+        );
+        BlockedRequestResponder blockedRequestResponder = new BlockedRequestResponder();
+
         // ============================
 
         while (true) {
@@ -48,7 +60,13 @@ public class ProxyServer {
             Socket client = ss.accept();
 
             LOG.info("Client Accepted\n");
-            new Thread(new ClientSession(client, parser, resolver)).start();
+            new Thread(new ClientSession(
+                    client,
+                    parser,
+                    resolver,
+                    dnsFilteringEngine,
+                    blockedRequestResponder
+            )).start();
         }
     }
 }
