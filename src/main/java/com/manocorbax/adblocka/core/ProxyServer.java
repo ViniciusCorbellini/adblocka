@@ -6,6 +6,7 @@ import com.manocorbax.adblocka.core.handler.HttpHandler;
 import com.manocorbax.adblocka.core.handler.RequestHandler;
 import com.manocorbax.adblocka.core.request.RequestParser;
 import com.manocorbax.adblocka.core.session.ClientSession;
+import com.manocorbax.adblocka.filter.dns.*;
 
 import java.net.ServerSocket;
 
@@ -41,6 +42,13 @@ public class ProxyServer {
         HandlerResolver resolver =
                 new HandlerResolver(handlers);
 
+        List<DomainBlocklist> blocklists = List.of(new DefaultDomainBlocklist());
+        DnsFilterEngine dnsFilterEngine = new DnsFilterEngine(
+                new JvmHostResolutionService(),
+                blocklists
+        );
+        BlockedRequestResponder blockedRequestResponder= new BlockedRequestResponder();
+
         // ============================
 
         while (true) {
@@ -48,7 +56,15 @@ public class ProxyServer {
             Socket client = ss.accept();
 
             LOG.info("Client Accepted\n");
-            new Thread(new ClientSession(client, parser, resolver)).start();
+            new Thread(
+                    new ClientSession(
+                            client,
+                            parser,
+                            resolver,
+                            dnsFilterEngine,
+                            blockedRequestResponder
+                    )
+            ).start();
         }
     }
 }

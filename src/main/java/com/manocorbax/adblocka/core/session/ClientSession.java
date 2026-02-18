@@ -4,6 +4,9 @@ import com.manocorbax.adblocka.core.handler.HandlerResolver;
 import com.manocorbax.adblocka.core.handler.RequestHandler;
 import com.manocorbax.adblocka.core.request.RequestContext;
 import com.manocorbax.adblocka.core.request.RequestParser;
+import com.manocorbax.adblocka.filter.dns.BlockedRequestResponder;
+import com.manocorbax.adblocka.filter.dns.DnsFilterDecision;
+import com.manocorbax.adblocka.filter.dns.DnsFilterEngine;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -16,11 +19,19 @@ public class ClientSession implements Runnable {
     private final Socket client;
     private final RequestParser parser;
     private final HandlerResolver resolver;
+    private final DnsFilterEngine dnsFilterEngine;
+    private final BlockedRequestResponder blockedRequestResponder;
 
-    public ClientSession(Socket client, RequestParser parser, HandlerResolver resolver) {
+    public ClientSession(Socket client,
+                         RequestParser parser,
+                         HandlerResolver resolver,
+                         DnsFilterEngine dnsFilterEngine,
+                         BlockedRequestResponder blockedRequestResponder) {
         this.client = client;
         this.parser = parser;
         this.resolver = resolver;
+        this.dnsFilterEngine = dnsFilterEngine;
+        this.blockedRequestResponder = blockedRequestResponder;
     }
 
     private static final Logger LOG = Logger.getLogger(ClientSession.class.getName());
@@ -37,6 +48,13 @@ public class ClientSession implements Runnable {
             RequestContext context = parser.parse(rawRequest, client);
             RequestHandler handler = resolver.resolve(context);
 
+            DnsFilterDecision decision = dnsFilterEngine.evaluate(context);
+            if (decision.blocked()){
+                LOG.info("Blocked request to host " + context.getHost() + " reason: " + decision.reason() + "\n");
+                blockedRequestResponder.respond(context, decision);
+                return;
+            }
+
             handler.handle(context);
 
         } catch (Exception e) {
@@ -44,7 +62,7 @@ public class ClientSession implements Runnable {
         }
     }
 
-    private String readRequest(Socket s) throws IOException{
+    private String readRequest(Socket s) throws IOException {
         // Sockets's input reader
         BufferedReader in = new BufferedReader(
                 new InputStreamReader( //converts received bytes to characters
