@@ -1,4 +1,4 @@
-package com.manocorbax.adblocka.core.tunnel;
+package com.manocorbax.adblocka.net.tunnel;
 
 import java.io.IOException;
 import java.io.InputStream;

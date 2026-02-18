@@ -1,7 +1,7 @@
 package com.manocorbax.adblocka.core.handler;
 
 import com.manocorbax.adblocka.core.request.RequestContext;
-import com.manocorbax.adblocka.core.tunnel.Tunnel;
+import com.manocorbax.adblocka.net.tunnel.Tunnel;
 
 import java.io.OutputStream;
 import java.net.Socket;
