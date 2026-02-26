@@ -7,6 +7,7 @@ import com.manocorbax.adblocka.core.handler.RequestHandler;
 import com.manocorbax.adblocka.core.request.RequestParser;
 import com.manocorbax.adblocka.core.session.ClientSession;
 import com.manocorbax.adblocka.filter.dns.*;
+import com.manocorbax.adblocka.filter.response.BlockedRequestResponder;
 
 import java.net.ServerSocket;
 

@@ -1,6 +1,7 @@
 package com.manocorbax.adblocka.filter.dns;
 
 import com.manocorbax.adblocka.core.request.RequestContext;
+import com.manocorbax.adblocka.filter.response.FilterDecision;
 import org.junit.jupiter.api.Test;
 
 import java.net.Socket;
@@ -27,7 +28,7 @@ public class DnsFilterEngineTest {
                 80
         );
 
-        DnsFilterDecision decision = engine.evaluate(context);
+        FilterDecision decision = engine.evaluate(context);
 
         assert decision.blocked();
     }
@@ -48,7 +49,7 @@ public class DnsFilterEngineTest {
                 80
         );
 
-        DnsFilterDecision decision = engine.evaluate(context);
+        FilterDecision decision = engine.evaluate(context);
 
         assert !decision.blocked();
     }

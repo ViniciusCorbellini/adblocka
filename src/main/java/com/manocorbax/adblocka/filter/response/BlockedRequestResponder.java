@@ -1,4 +1,4 @@
-package com.manocorbax.adblocka.filter.dns;
+package com.manocorbax.adblocka.filter.response;
 
 import com.manocorbax.adblocka.core.request.RequestContext;
 
@@ -7,9 +7,9 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
 public class BlockedRequestResponder {
-    public void respond(RequestContext context, DnsFilterDecision decision) throws IOException {
+    public void respond(RequestContext context, FilterDecision decision, String filterName) throws IOException {
         String reason = decision.reason();
-        String body = "Request blocked by DNS filter: " + reason + "\n";
+        String body = "Request blocked by " + filterName + " filter: " + reason + "\n";
 
         String statusLine = "HTTP/1.1 403 Forbidden";
 

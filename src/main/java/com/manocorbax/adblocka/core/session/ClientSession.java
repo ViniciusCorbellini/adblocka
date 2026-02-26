@@ -4,8 +4,8 @@ import com.manocorbax.adblocka.core.handler.HandlerResolver;
 import com.manocorbax.adblocka.core.handler.RequestHandler;
 import com.manocorbax.adblocka.core.request.RequestContext;
 import com.manocorbax.adblocka.core.request.RequestParser;
-import com.manocorbax.adblocka.filter.dns.BlockedRequestResponder;
-import com.manocorbax.adblocka.filter.dns.DnsFilterDecision;
+import com.manocorbax.adblocka.filter.response.BlockedRequestResponder;
+import com.manocorbax.adblocka.filter.response.FilterDecision;
 import com.manocorbax.adblocka.filter.dns.DnsFilterEngine;
 
 import java.io.BufferedReader;
@@ -48,10 +48,10 @@ public class ClientSession implements Runnable {
             RequestContext context = parser.parse(rawRequest, client);
             RequestHandler handler = resolver.resolve(context);
 
-            DnsFilterDecision decision = dnsFilterEngine.evaluate(context);
+            FilterDecision decision = dnsFilterEngine.evaluate(context);
             if (decision.blocked()){
                 LOG.info("Blocked request to host " + context.getHost() + " reason: " + decision.reason() + "\n");
-                blockedRequestResponder.respond(context, decision);
+                blockedRequestResponder.respond(context, decision, "DNS");
                 return;
             }
 
