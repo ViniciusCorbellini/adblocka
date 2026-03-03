@@ -7,6 +7,10 @@ import com.manocorbax.adblocka.core.handler.RequestHandler;
 import com.manocorbax.adblocka.core.request.RequestParser;
 import com.manocorbax.adblocka.core.session.ClientSession;
 import com.manocorbax.adblocka.filter.dns.*;
+import com.manocorbax.adblocka.filter.http.DefaultPatternList;
+import com.manocorbax.adblocka.filter.http.HttpFilterEngine;
+import com.manocorbax.adblocka.filter.http.PatternBuilder;
+import com.manocorbax.adblocka.filter.http.PatternList;
 import com.manocorbax.adblocka.filter.response.BlockedRequestResponder;
 
 import java.net.ServerSocket;
@@ -14,6 +18,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 public class ProxyServer {
 
@@ -50,6 +55,9 @@ public class ProxyServer {
         );
         BlockedRequestResponder blockedRequestResponder= new BlockedRequestResponder();
 
+        List<PatternList> blockedPAtternLists = List.of(new DefaultPatternList());
+        Pattern pattern = PatternBuilder.buildAdPattern(blockedPAtternLists);
+        HttpFilterEngine httpFilterEngine = new HttpFilterEngine(blockedPAtternLists, pattern);
         // ============================
 
         while (true) {
@@ -63,7 +71,8 @@ public class ProxyServer {
                             parser,
                             resolver,
                             dnsFilterEngine,
-                            blockedRequestResponder
+                            blockedRequestResponder,
+                            httpFilterEngine
                     )
             ).start();
         }

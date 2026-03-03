@@ -17,7 +17,8 @@ public class DefaultDomainBlocklist implements DomainBlocklist{
             "taboola.com",
             "outbrain.com",
             "criteo.com",
-            "scorecardresearch.com"
+            "scorecardresearch.com",
+            "rp.liadm.com"
     );
 
     private static final Set<String> BLOCKED_KEYWORDS = Set.of(

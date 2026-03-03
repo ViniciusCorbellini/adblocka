@@ -1,12 +1,13 @@
 package com.manocorbax.adblocka.filter.dns;
 
 import com.manocorbax.adblocka.core.request.RequestContext;
+import com.manocorbax.adblocka.filter.FilterEngine;
 import com.manocorbax.adblocka.filter.response.FilterDecision;
 
 import java.net.InetAddress;
 import java.util.List;
 
-public class DnsFilterEngine {
+public class DnsFilterEngine implements FilterEngine {
 
     private final HostResolutionService resolver;
     private final List<DomainBlocklist> blocklists;
@@ -16,6 +17,7 @@ public class DnsFilterEngine {
         this.blocklists = blocklists;
     }
 
+    @Override
     public FilterDecision evaluate(RequestContext context) {
         String host = context.getHost();
         List<InetAddress> resolved = resolver.resolve(host);
@@ -23,7 +25,10 @@ public class DnsFilterEngine {
         return blocklists.stream()
                 .filter(blocklist -> blocklist.matches(host, resolved))
                 .findFirst()
-                .map(blocklist -> FilterDecision.block(host, "DNS", "blocked by " + blocklist.id()))
+                .map(blocklist -> FilterDecision.block(host, id(), "blocked by " + blocklist.id()))
                 .orElseGet(() -> FilterDecision.allow(host));
     }
+
+    @Override
+    public String id() { return "DNS"; }
 }

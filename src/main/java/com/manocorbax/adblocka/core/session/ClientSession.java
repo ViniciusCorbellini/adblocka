@@ -4,6 +4,7 @@ import com.manocorbax.adblocka.core.handler.HandlerResolver;
 import com.manocorbax.adblocka.core.handler.RequestHandler;
 import com.manocorbax.adblocka.core.request.RequestContext;
 import com.manocorbax.adblocka.core.request.RequestParser;
+import com.manocorbax.adblocka.filter.http.HttpFilterEngine;
 import com.manocorbax.adblocka.filter.response.BlockedRequestResponder;
 import com.manocorbax.adblocka.filter.response.FilterDecision;
 import com.manocorbax.adblocka.filter.dns.DnsFilterEngine;
@@ -14,6 +15,7 @@ import java.io.InputStreamReader;
 import java.net.Socket;
 import java.util.logging.Logger;
 
+// TODO: HTTP FILTER
 public class ClientSession implements Runnable {
 
     private final Socket client;
@@ -21,17 +23,20 @@ public class ClientSession implements Runnable {
     private final HandlerResolver resolver;
     private final DnsFilterEngine dnsFilterEngine;
     private final BlockedRequestResponder blockedRequestResponder;
+    private final HttpFilterEngine httpFilterEngine;
 
     public ClientSession(Socket client,
                          RequestParser parser,
                          HandlerResolver resolver,
                          DnsFilterEngine dnsFilterEngine,
-                         BlockedRequestResponder blockedRequestResponder) {
+                         BlockedRequestResponder blockedRequestResponder,
+                         HttpFilterEngine httpFilterEngine) {
         this.client = client;
         this.parser = parser;
         this.resolver = resolver;
         this.dnsFilterEngine = dnsFilterEngine;
         this.blockedRequestResponder = blockedRequestResponder;
+        this.httpFilterEngine = httpFilterEngine;
     }
 
     private static final Logger LOG = Logger.getLogger(ClientSession.class.getName());
@@ -48,18 +53,30 @@ public class ClientSession implements Runnable {
             RequestContext context = parser.parse(rawRequest, client);
             RequestHandler handler = resolver.resolve(context);
 
-            FilterDecision decision = dnsFilterEngine.evaluate(context);
-            if (decision.blocked()){
-                LOG.info("Blocked request to host " + context.getHost() + " reason: " + decision.reason() + "\n");
-                blockedRequestResponder.respond(context, decision, "DNS");
-                return;
-            }
+            FilterDecision dnsDecision = dnsFilterEngine.evaluate(context);
+            boolean blocked = evaluateIfDecisionBlocked(dnsDecision, context, "DNS");
+            if (blocked) return;
+
+            FilterDecision regexBlocked = httpFilterEngine.evaluate(context);
+            blocked = evaluateIfDecisionBlocked(regexBlocked, context, "HTTP-REGEX");
+            if (blocked) return;
 
             handler.handle(context);
 
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private boolean evaluateIfDecisionBlocked(FilterDecision decision, RequestContext context, String filtername) throws IOException {
+        boolean blocked = decision.blocked();
+
+        if (blocked){
+            LOG.info("Blocked request to host " + context.getHost() + " reason: " + decision.reason() + "\n");
+            blockedRequestResponder.respond(context, decision, filtername);
+        }
+
+        return blocked;
     }
 
     private String readRequest(Socket s) throws IOException {
