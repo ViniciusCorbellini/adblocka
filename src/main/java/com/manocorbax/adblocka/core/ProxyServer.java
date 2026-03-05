@@ -6,6 +6,8 @@ import com.manocorbax.adblocka.core.handler.HttpHandler;
 import com.manocorbax.adblocka.core.handler.RequestHandler;
 import com.manocorbax.adblocka.core.request.RequestParser;
 import com.manocorbax.adblocka.core.session.ClientSession;
+import com.manocorbax.adblocka.filter.FilterEngine;
+import com.manocorbax.adblocka.filter.FilterPipeline;
 import com.manocorbax.adblocka.filter.dns.*;
 import com.manocorbax.adblocka.filter.http.DefaultPatternList;
 import com.manocorbax.adblocka.filter.http.HttpFilterEngine;
@@ -37,9 +39,11 @@ public class ProxyServer {
         );
 
         // ===== COMPOSITION ROOT =====
-
+        // request parser
         RequestParser parser = new RequestParser();
 
+
+        // Handler Resolver
         List<RequestHandler> handlers = List.of(
                 new ConnectHandler(),
                 new HttpHandler()
@@ -48,16 +52,22 @@ public class ProxyServer {
         HandlerResolver resolver =
                 new HandlerResolver(handlers);
 
+        // dns filter
         List<DomainBlocklist> blocklists = List.of(new DefaultDomainBlocklist());
         DnsFilterEngine dnsFilterEngine = new DnsFilterEngine(
                 new JvmHostResolutionService(),
                 blocklists
         );
-        BlockedRequestResponder blockedRequestResponder= new BlockedRequestResponder();
 
+        // http filter
         List<PatternList> blockedPAtternLists = List.of(new DefaultPatternList());
         Pattern pattern = PatternBuilder.buildAdPattern(blockedPAtternLists);
         HttpFilterEngine httpFilterEngine = new HttpFilterEngine(blockedPAtternLists, pattern);
+
+        // Filter pipeline
+        BlockedRequestResponder blockedRequestResponder = new BlockedRequestResponder();
+        List<FilterEngine> filters = List.of(dnsFilterEngine, httpFilterEngine);
+        FilterPipeline filterPipeline = new FilterPipeline(filters, blockedRequestResponder);
         // ============================
 
         while (true) {
@@ -70,9 +80,7 @@ public class ProxyServer {
                             client,
                             parser,
                             resolver,
-                            dnsFilterEngine,
-                            blockedRequestResponder,
-                            httpFilterEngine
+                            filterPipeline
                     )
             ).start();
         }
