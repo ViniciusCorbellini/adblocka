@@ -19,11 +19,21 @@ public class HttpFilterEngine implements FilterEngine {
 
     @Override
     public FilterDecision evaluate(RequestContext context) {
-        //TODO: fix bad logic: i dont extract the actual payload yet::i'll do it later
-        String rawRequest = context.getRawRequest();
+        String body = new String(context.getBody());
+
+        String headers = context.getHeaders()
+                .entrySet()
+                .stream()
+                .map(e -> e.getKey() + ":" + e.getValue())
+                .reduce("", (a, b) -> a + "\n" + b);
+
+        String requestSurface =
+                context.getPath() + "\n" +
+                        headers + "\n" +
+                        body;
 
         return blockedPatternLists.stream()
-                .filter(bpl -> bpl.matches(rawRequest, pattern))
+                .filter(bpl -> bpl.matches(requestSurface, pattern))
                 .findFirst()
                 .map(bpl -> FilterDecision.block(context.getHost(), id(), "blocked by " + bpl.id()))
                 .orElseGet(() -> FilterDecision.allow(context.getHost()));

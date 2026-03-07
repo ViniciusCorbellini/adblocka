@@ -2,6 +2,8 @@ package com.manocorbax.adblocka.core.session;
 
 import com.manocorbax.adblocka.core.handler.HandlerResolver;
 import com.manocorbax.adblocka.core.handler.RequestHandler;
+import com.manocorbax.adblocka.core.request.HttpRequestParser;
+import com.manocorbax.adblocka.core.request.ParsedHttpRequest;
 import com.manocorbax.adblocka.core.request.RequestContext;
 import com.manocorbax.adblocka.core.request.RequestParser;
 import com.manocorbax.adblocka.filter.FilterEngine;
@@ -21,15 +23,18 @@ import java.util.logging.Logger;
 public class ClientSession implements Runnable {
 
     private final Socket client;
+    private final HttpRequestParser httpParser;
     private final RequestParser parser;
     private final HandlerResolver resolver;
-    private final FilterPipeline  filterPipeline;
+    private final FilterPipeline filterPipeline;
 
     public ClientSession(Socket client,
+                         HttpRequestParser httpParser,
                          RequestParser parser,
                          HandlerResolver resolver,
                          FilterPipeline filterPipeline) {
         this.client = client;
+        this.httpParser = httpParser;
         this.parser = parser;
         this.resolver = resolver;
         this.filterPipeline = filterPipeline;
@@ -42,11 +47,11 @@ public class ClientSession implements Runnable {
         LOG.info("Starting new ClientSession\n");
         try {
             LOG.info("Reading client's request\n");
-            String rawRequest = readRequest(client);
+            ParsedHttpRequest parsedHttpRequest = httpParser.parse(client.getInputStream());
 
-            LOG.info("REQUEST: " + rawRequest + "\n");
+            LOG.info("REQUEST: " + parsedHttpRequest.getRequestLine() + "\n");
 
-            RequestContext context = parser.parse(rawRequest, client);
+            RequestContext context = parser.buildContext(parsedHttpRequest, client);
             RequestHandler handler = resolver.resolve(context);
 
             boolean blocked = filterPipeline.doFilter(context);
@@ -61,24 +66,5 @@ public class ClientSession implements Runnable {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private String readRequest(Socket s) throws IOException {
-        // Sockets's input reader
-        BufferedReader in = new BufferedReader(
-                new InputStreamReader( //converts received bytes to characters
-                        s.getInputStream()
-                )
-        );
-
-        StringBuilder request = new StringBuilder();
-        String line;
-
-        //Iterates until the full message is read
-        while ((line = in.readLine()) != null && !line.isEmpty()) {
-            request.append(line).append("\r\n");
-        }
-
-        return request.toString();
     }
 }

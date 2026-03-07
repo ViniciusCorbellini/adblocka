@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import java.net.Socket;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -13,44 +14,44 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class DnsFilterEngineTest {
 
     @Test
-    void shouldBlockKnownAdDomain(){
+    void shouldBlockKnownAdDomain() {
         HostResolutionService resolver = host -> List.of();
         DnsFilterEngine engine = new DnsFilterEngine(
                 resolver,
                 List.of(new DefaultDomainBlocklist())
         );
 
-        RequestContext context =  new RequestContext(
-                "GET / HTTP/1.1\r\nHost: ads.doubleclick.net\r\n\r\n",
-                new Socket(),
-                "GET",
-                "ads.doubleclick.net",
-                80
-        );
+        RequestContext context = contextForHost("ads.doubleclick.net");
 
         FilterDecision decision = engine.evaluate(context);
 
-        assert decision.blocked();
+        assertTrue(decision.blocked());
     }
 
     @Test
-    void shouldAllowRegularDomain(){
+    void shouldAllowRegularDomain() {
         HostResolutionService resolver = host -> List.of();
         DnsFilterEngine engine = new DnsFilterEngine(
                 resolver,
                 List.of(new DefaultDomainBlocklist())
         );
 
-        RequestContext context = new RequestContext(
-                "GET / HTTP/1.1\r\nHost: test.org\r\n\r\n",
-                new Socket(),
-                "GET",
-                "test.org",
-                80
-        );
+        RequestContext context = contextForHost("test.org");
 
         FilterDecision decision = engine.evaluate(context);
 
-        assert !decision.blocked();
+        assertFalse(decision.blocked());
+    }
+
+    private RequestContext contextForHost(String host) {
+        return new RequestContext(
+                new Socket(),
+                "GET",
+                host,
+                80,
+                "/",
+                Map.of("host", host),
+                new byte[0]
+        );
     }
 }

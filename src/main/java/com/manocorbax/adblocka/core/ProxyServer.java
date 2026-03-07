@@ -4,6 +4,7 @@ import com.manocorbax.adblocka.core.handler.ConnectHandler;
 import com.manocorbax.adblocka.core.handler.HandlerResolver;
 import com.manocorbax.adblocka.core.handler.HttpHandler;
 import com.manocorbax.adblocka.core.handler.RequestHandler;
+import com.manocorbax.adblocka.core.request.HttpRequestParser;
 import com.manocorbax.adblocka.core.request.RequestParser;
 import com.manocorbax.adblocka.core.session.ClientSession;
 import com.manocorbax.adblocka.filter.FilterEngine;
@@ -40,8 +41,8 @@ public class ProxyServer {
 
         // ===== COMPOSITION ROOT =====
         // request parser
+        HttpRequestParser httpParser = new HttpRequestParser();
         RequestParser parser = new RequestParser();
-
 
         // Handler Resolver
         List<RequestHandler> handlers = List.of(
@@ -78,6 +79,7 @@ public class ProxyServer {
             new Thread(
                     new ClientSession(
                             client,
+                            httpParser,
                             parser,
                             resolver,
                             filterPipeline

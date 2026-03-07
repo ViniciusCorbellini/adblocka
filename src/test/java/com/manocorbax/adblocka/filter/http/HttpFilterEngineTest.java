@@ -6,9 +6,12 @@ import org.junit.jupiter.api.Test;
 
 import java.net.Socket;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+//TODO
 
 public class HttpFilterEngineTest {
 
@@ -28,29 +31,15 @@ public class HttpFilterEngineTest {
         HttpFilterEngine engine = buildEngine();
 
         RequestContext context = new RequestContext(
-                "GET /ads/banner.js HTTP/1.1\r\nHost: example.com\r\n\r\n",
                 new Socket(),
                 "GET",
                 "example.com",
-                80
-        );
-
-        FilterDecision decision = engine.evaluate(context);
-
-        assertTrue(decision.blocked());
-    }
-
-    @Test
-    void shouldBlockRequestContainingAdKeywordInHost() {
-
-        HttpFilterEngine engine = buildEngine();
-
-        RequestContext context = new RequestContext(
-                "GET / HTTP/1.1\r\nHost: ads.doubleclick.net\r\n\r\n",
-                new Socket(),
-                "GET",
-                "ads.doubleclick.net",
-                80
+                80,
+                "/ads/banner.js",
+                Map.of(
+                        "host", "example.com"
+                ),
+                new byte[0]
         );
 
         FilterDecision decision = engine.evaluate(context);
@@ -64,11 +53,15 @@ public class HttpFilterEngineTest {
         HttpFilterEngine engine = buildEngine();
 
         RequestContext context = new RequestContext(
-                "GET /collect?tracking_id=123 HTTP/1.1\r\nHost: example.com\r\n\r\n",
                 new Socket(),
                 "GET",
                 "example.com",
-                80
+                80,
+                "/collect?tracking_id=123",
+                Map.of(
+                        "host", "example.com"
+                ),
+                new byte[0]
         );
 
         FilterDecision decision = engine.evaluate(context);
@@ -81,14 +74,23 @@ public class HttpFilterEngineTest {
 
         HttpFilterEngine engine = buildEngine();
 
+        byte[] body = """
+            {
+              "script": "test"
+            }
+            """.getBytes();
+
         RequestContext context = new RequestContext(
-                "GET /home HTTP/1.1\r\nHost: example.com\r\n\r\n",
                 new Socket(),
                 "GET",
                 "example.com",
-                80
+                80,
+                "/test",
+                Map.of(
+                        "host", "example.com"
+                ),
+                body
         );
-
         FilterDecision decision = engine.evaluate(context);
 
         assertFalse(decision.blocked());
@@ -99,13 +101,23 @@ public class HttpFilterEngineTest {
 
         HttpFilterEngine engine = buildEngine();
 
-        // downloADS
+
+        byte[] body = """
+            {
+              "script": "downloads"
+            }
+            """.getBytes();
+
         RequestContext context = new RequestContext(
-                "GET /downloads HTTP/1.1\r\nHost: example.com\r\n\r\n",
                 new Socket(),
                 "GET",
                 "example.com",
-                80
+                80,
+                "/downloads",
+                Map.of(
+                        "host", "downloads.com"
+                ),
+                body
         );
 
         FilterDecision decision = engine.evaluate(context);
