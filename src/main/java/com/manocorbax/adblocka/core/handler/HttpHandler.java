@@ -11,13 +11,13 @@ public class HttpHandler implements RequestHandler{
 
     @Override
     public boolean supports(RequestContext context) {
-        return !"CONNECT".equalsIgnoreCase(context.getMethod());
+        return !"CONNECT".equalsIgnoreCase(context.method());
     }
 
     @Override
     public void handle(RequestContext context) throws Exception {
-        Socket clientSocket = context.getClientSocket();
-        Socket serverSocket = new Socket(context.getHost(), context.getPort());
+        Socket clientSocket = context.clientSocket();
+        Socket serverSocket = new Socket(context.host(), context.port());
 
         try {
             OutputStream clientOut = clientSocket.getOutputStream();
@@ -25,7 +25,7 @@ public class HttpHandler implements RequestHandler{
             InputStream serverIn = serverSocket.getInputStream();
             OutputStream serverOut = serverSocket.getOutputStream();
 
-            String headers = context.getHeaders()
+            String headers = context.headers()
                     .entrySet()
                     .stream()
                     .map(e -> e.getKey() + ":" + e.getValue())
@@ -47,7 +47,7 @@ public class HttpHandler implements RequestHandler{
     }
 
     private void forwardRequestBodyIfPresent(RequestContext context, OutputStream serverOut) throws IOException {
-        byte[] body = context.getBody();
+        byte[] body = context.body();
 
         if(body != null && body.length > 0){
             serverOut.write(body);

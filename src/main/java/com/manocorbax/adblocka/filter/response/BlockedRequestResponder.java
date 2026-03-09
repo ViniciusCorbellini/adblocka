@@ -20,9 +20,9 @@ public class BlockedRequestResponder {
                 + "\r\n"
                 + body;
 
-        OutputStream out = context.getClientSocket().getOutputStream();
+        OutputStream out = context.clientSocket().getOutputStream();
         out.write(response.getBytes(StandardCharsets.UTF_8));
         out.flush();
-        context.getClientSocket().close();
+        context.clientSocket().close();
     }
 }

@@ -11,13 +11,17 @@ public class ConnectHandler implements RequestHandler{
 
     @Override
     public boolean supports(RequestContext context) {
-        return "CONNECT".equalsIgnoreCase(context.getMethod());
+        return "CONNECT".equalsIgnoreCase(context.method());
     }
 
     @Override
     public void handle(RequestContext context) throws Exception {
-        Socket client = context.getClientSocket();
-        Socket remote = new Socket(context.getHost(), context.getPort());
+
+        // easy debugging
+        // System.out.println(context.toString());
+
+        Socket client = context.clientSocket();
+        Socket remote = new Socket(context.host(), context.port());
 
         // 200 OK answer
         sendOkAnswer(client);

@@ -10,7 +10,7 @@ public class RequestParser {
 
         String method = firstLine[0];
         String uri = firstLine[0];
-        String host = request.getHeaders().get("host");
+        String host = request.getHeaders().get("host").split(":")[0];
 
         return new RequestContext(
                 client,

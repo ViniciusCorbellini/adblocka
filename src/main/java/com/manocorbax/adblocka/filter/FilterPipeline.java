@@ -39,7 +39,7 @@ public class FilterPipeline {
         boolean blocked = decision.blocked();
 
         if (blocked){
-            LOG.info("Blocked request to host " + context.getHost() + " reason: " + decision.reason() + "\n");
+            LOG.info("Blocked request to host " + context.host() + " reason: " + decision.reason() + "\n");
             blockedRequestResponder.respond(context, decision, filtername);
         }
 

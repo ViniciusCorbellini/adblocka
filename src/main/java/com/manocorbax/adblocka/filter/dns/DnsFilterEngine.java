@@ -19,7 +19,7 @@ public class DnsFilterEngine implements FilterEngine {
 
     @Override
     public FilterDecision evaluate(RequestContext context) {
-        String host = context.getHost();
+        String host = context.host();
         List<InetAddress> resolved = resolver.resolve(host);
 
         return blocklists.stream()
