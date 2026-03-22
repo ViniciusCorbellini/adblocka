@@ -6,6 +6,7 @@ import com.manocorbax.adblocka.filter.response.FilterDecision;
 
 import java.util.List;
 import java.util.regex.Pattern;
+import java.lang.StringBuilder;
 
 public class HttpFilterEngine implements FilterEngine {
 
@@ -19,23 +20,26 @@ public class HttpFilterEngine implements FilterEngine {
 
     @Override
     public FilterDecision evaluate(RequestContext context) {
-        String body = new String(context.body());
+        StringBuilder sb = new StringBuilder();
+        
+        sb.append(context.path()).append('\n');
 
-        String headers = context.headers()
-                .entrySet()
-                .stream()
-                .map(e -> e.getKey() + ":" + e.getValue())
-                .reduce("", (a, b) -> a + "\n" + b);
+        context.headers().forEach((k,v) ->
+            sb.append(k).append(':').append(v).append('\n')
+        );
 
-        String requestSurface =
-                context.path() + "\n" +
-                        headers + "\n" +
-                        body;
+        sb.append(new String(context.body()));
+
+        String requestSurface = sb.toString();
 
         return blockedPatternLists.stream()
                 .filter(bpl -> bpl.matches(requestSurface, pattern))
                 .findFirst()
-                .map(bpl -> FilterDecision.block(context.host(), id(), "blocked by " + bpl.id()))
+                .map(bpl -> FilterDecision.block(
+                        context.host(),
+                        id(),
+                        "blocked by " + bpl.id()
+                ))
                 .orElseGet(() -> FilterDecision.allow(context.host()));
     }
 

@@ -57,7 +57,6 @@ public class ClientSession implements Runnable {
             boolean blocked = filterPipeline.doFilter(context);
 
             if (blocked) {
-                LOG.info("Request blocked... ignoring\n");
                 return;
             }
 
